@@ -169,7 +169,10 @@
   </div>
 
   <footer>
-    Hear · Live captions from the YouTube stream · Translation via Azure
+    <p>Hear helps our church family and visitors follow the service in their own language.<br>
+    We use it so more people in our community can hear the gospel clearly — whether they are deaf, speak another language, or simply want to follow along.</p>
+    <p class="verse">“So then faith cometh by hearing, and hearing by the word of God.” — Romans 10:17</p>
+    <p style="margin-top:1rem; font-size:0.8rem; color:#888;">Hear · Live captions from the YouTube stream</p>
   </footer>
 
 <script>
@@ -190,7 +193,6 @@ function formatTime() {
 function addCaption(data) {
   const lang = langSelect.value;
   const showEn = lang === 'en' || lang === 'both';
-  const targetLang = (lang === 'en' || lang === 'both') ? 'es' : lang; // fallback; real version uses selected
   const showTarget = lang !== 'en';
 
   if (showEn && data.en) {
@@ -199,7 +201,6 @@ function addCaption(data) {
     el.innerHTML = `<div class="lang-label">English</div>${escapeHtml(data.en)}<div class="timestamp">${formatTime()}</div>`;
     captionsEl.appendChild(el);
   }
-  // Prefer the language-specific field if the backend sent it, otherwise fall back
   const translated = data[lang] || data.es || data.translated;
   if (showTarget && translated && lang !== 'en') {
     const label = langSelect.options[langSelect.selectedIndex].text.split(' (')[0];
@@ -268,11 +269,6 @@ connectBtn.addEventListener('click', connect);
 clearBtn.addEventListener('click', () => {
   captionsEl.innerHTML = '';
 });
-
-// Auto-connect if URL is set
-if (wsUrlInput.value) {
-  // connect(); // uncomment for auto-connect
-}
 </script>
 </body>
 </html>
