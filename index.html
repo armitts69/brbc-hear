@@ -32,6 +32,10 @@
     gap: 0.75rem;
   }
   header h1 { margin: 0; font-size: 1.25rem; font-weight: 600; }
+  .header-right { display: flex; align-items: center; gap: 0.75rem; }
+  .version { font-size: 0.75rem; opacity: 0.7; }
+  .church-link { color: white; text-decoration: none; font-size: 0.9rem; opacity: 0.9; }
+  .church-link:hover { text-decoration: underline; }
   .live-badge {
     background: #e74c3c;
     color: white;
@@ -120,15 +124,30 @@
 <body>
   <header>
     <h1>Hear · Buckley Road Baptist Church</h1>
-    <span class="live-badge" id="live-badge">CONNECTING</span>
+    <div class="header-right">
+      <a class="church-link" href="https://www.buckleyroadbaptist.org" target="_blank">Church Website</a>
+      <span class="version">v1.1</span>
+      <span class="live-badge" id="live-badge">CONNECTING</span>
+    </div>
   </header>
 
   <div class="controls">
     <label for="lang">Language:</label>
     <select id="lang">
       <option value="en">English</option>
-      <option value="es">Español</option>
-      <option value="both">Both (English + Spanish)</option>
+      <option value="es">Español (Spanish)</option>
+      <option value="fr">Français (French)</option>
+      <option value="pt">Português (Portuguese)</option>
+      <option value="zh">中文 (Chinese)</option>
+      <option value="ko">한국어 (Korean)</option>
+      <option value="ar">العربية (Arabic)</option>
+      <option value="ru">Русский (Russian)</option>
+      <option value="ht">Kreyòl (Haitian Creole)</option>
+      <option value="vi">Tiếng Việt (Vietnamese)</option>
+      <option value="tl">Tagalog</option>
+      <option value="de">Deutsch (German)</option>
+      <option value="it">Italiano (Italian)</option>
+      <option value="both">English + Selected</option>
     </select>
     <label for="ws-url">Server:</label>
     <input id="ws-url" type="text" value="wss://brbc-hear-api.azurewebsites.net/ws" style="min-width:220px">
@@ -163,7 +182,8 @@ function formatTime() {
 function addCaption(data) {
   const lang = langSelect.value;
   const showEn = lang === 'en' || lang === 'both';
-  const showEs = lang === 'es' || lang === 'both';
+  const targetLang = (lang === 'en' || lang === 'both') ? 'es' : lang; // fallback; real version uses selected
+  const showTarget = lang !== 'en';
 
   if (showEn && data.en) {
     const el = document.createElement('div');
@@ -171,10 +191,13 @@ function addCaption(data) {
     el.innerHTML = `<div class="lang-label">English</div>${escapeHtml(data.en)}<div class="timestamp">${formatTime()}</div>`;
     captionsEl.appendChild(el);
   }
-  if (showEs && data.es) {
+  // Prefer the language-specific field if the backend sent it, otherwise fall back
+  const translated = data[lang] || data.es || data.translated;
+  if (showTarget && translated && lang !== 'en') {
+    const label = langSelect.options[langSelect.selectedIndex].text.split(' (')[0];
     const el = document.createElement('div');
     el.className = 'caption-line';
-    el.innerHTML = `<div class="lang-label">Español</div>${escapeHtml(data.es)}<div class="timestamp">${formatTime()}</div>`;
+    el.innerHTML = `<div class="lang-label">${label}</div>${escapeHtml(translated)}<div class="timestamp">${formatTime()}</div>`;
     captionsEl.appendChild(el);
   }
 
