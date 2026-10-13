@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hear · Buckley Road Baptist Church</title>
+<style>
+  :root {
+    --slate: #2F3D47;
+    --clay: #B85A3D;
+    --bg: #f7f5f2;
+    --text: #1a1a1a;
+    --caption-bg: #ffffff;
+    --border: #e0dcd6;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  header {
+    background: var(--slate);
+    color: white;
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  header h1 { margin: 0; font-size: 1.25rem; font-weight: 600; }
+  .live-badge {
+    background: #e74c3c;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    letter-spacing: 0.05em;
+  }
+  .live-badge.offline { background: #888; }
+  .controls {
+    padding: 1rem 1.25rem;
+    background: white;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  label { font-weight: 500; }
+  select, button, input {
+    font-size: 1rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+  }
+  button {
+    background: var(--clay);
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  button:hover { opacity: 0.9; }
+  button.secondary { background: var(--slate); }
+  #caption-area {
+    max-width: 800px;
+    margin: 1.5rem auto;
+    padding: 0 1rem;
+  }
+  #captions {
+    background: var(--caption-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    min-height: 60vh;
+    max-height: 70vh;
+    overflow-y: auto;
+    padding: 1.5rem;
+    font-size: 1.35rem;
+    line-height: 1.6;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .caption-line { margin-bottom: 1rem; animation: fadeIn 0.4s ease; }
+  .caption-line .lang-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--clay);
+    margin-bottom: 0.25rem;
+  }
+  .caption-line.en .lang-label { color: var(--slate); }
+  .timestamp { font-size: 0.75rem; color: #888; margin-top: 0.25rem; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .status {
+    text-align: center;
+    color: #666;
+    font-size: 0.9rem;
+    margin-top: 0.75rem;
+  }
+  footer {
+    text-align: center;
+    padding: 1.5rem;
+    color: #888;
+    font-size: 0.85rem;
+  }
+  @media (max-width: 600px) {
+    #captions { font-size: 1.15rem; min-height: 50vh; }
+    header h1 { font-size: 1.1rem; }
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Hear · Buckley Road Baptist Church</h1>
+    <span class="live-badge" id="live-badge">CONNECTING</span>
+  </header>
+
+  <div class="controls">
+    <label for="lang">Language:</label>
+    <select id="lang">
+      <option value="en">English</option>
+      <option value="es">Español</option>
+      <option value="both">Both (English + Spanish)</option>
+    </select>
+    <label for="ws-url">Server:</label>
+    <input id="ws-url" type="text" value="ws://localhost:8765" style="min-width:220px">
+    <button id="connect">Connect</button>
+    <button id="clear" class="secondary">Clear</button>
+  </div>
+
+  <div id="caption-area">
+    <div id="captions" aria-live="polite" aria-atomic="false"></div>
+    <div class="status" id="status">Enter the WebSocket address and click Connect</div>
+  </div>
+
+  <footer>
+    Hear · Live captions from the YouTube stream · Translation via Azure
+  </footer>
+
+<script>
+const captionsEl = document.getElementById('captions');
+const statusEl = document.getElementById('status');
+const langSelect = document.getElementById('lang');
+const wsUrlInput = document.getElementById('ws-url');
+const connectBtn = document.getElementById('connect');
+const clearBtn = document.getElementById('clear');
+const liveBadge = document.getElementById('live-badge');
+
+let socket = null;
+
+function formatTime() {
+  return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+function addCaption(data) {
+  const lang = langSelect.value;
+  const showEn = lang === 'en' || lang === 'both';
+  const showEs = lang === 'es' || lang === 'both';
+
+  if (showEn && data.en) {
+    const el = document.createElement('div');
+    el.className = 'caption-line en';
+    el.innerHTML = `<div class="lang-label">English</div>${escapeHtml(data.en)}<div class="timestamp">${formatTime()}</div>`;
+    captionsEl.appendChild(el);
+  }
+  if (showEs && data.es) {
+    const el = document.createElement('div');
+    el.className = 'caption-line';
+    el.innerHTML = `<div class="lang-label">Español</div>${escapeHtml(data.es)}<div class="timestamp">${formatTime()}</div>`;
+    captionsEl.appendChild(el);
+  }
+
+  while (captionsEl.children.length > 30) {
+    captionsEl.removeChild(captionsEl.firstChild);
+  }
+  captionsEl.scrollTop = captionsEl.scrollHeight;
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function setStatus(text, isLive = false) {
+  statusEl.textContent = text;
+  liveBadge.textContent = isLive ? 'LIVE' : 'OFFLINE';
+  liveBadge.classList.toggle('offline', !isLive);
+}
+
+function connect() {
+  if (socket) {
+    socket.close();
+  }
+  const url = wsUrlInput.value.trim();
+  if (!url) return;
+
+  setStatus('Connecting…');
+  socket = new WebSocket(url);
+
+  socket.onopen = () => {
+    setStatus('Connected — waiting for captions', true);
+  };
+
+  socket.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      if (data.type === 'caption') {
+        addCaption(data);
+      } else if (data.type === 'status') {
+        setStatus(data.message || 'Connected', true);
+      }
+    } catch (e) {
+      console.error('Bad message', e);
+    }
+  };
+
+  socket.onclose = () => {
+    setStatus('Disconnected');
+    socket = null;
+  };
+
+  socket.onerror = () => {
+    setStatus('Connection error — check the server address');
+  };
+}
+
+connectBtn.addEventListener('click', connect);
+clearBtn.addEventListener('click', () => {
+  captionsEl.innerHTML = '';
+});
+
+// Auto-connect if URL is set
+if (wsUrlInput.value) {
+  // connect(); // uncomment for auto-connect
+}
+</script>
+</body>
+</html>
