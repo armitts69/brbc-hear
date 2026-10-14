@@ -134,12 +134,17 @@
     <h1>Hear · Buckley Road Baptist Church</h1>
     <div class="header-right">
       <a class="church-link" href="https://www.buckleyroadbaptist.org" target="_blank">Church Website</a>
-      <span class="version">v1.1</span>
+      <span class="version">v1.2</span>
       <span class="live-badge" id="live-badge">CONNECTING</span>
     </div>
   </header>
 
   <div class="controls">
+    <label for="source">Source:</label>
+    <select id="source">
+      <option value="youtube" selected>YouTube</option>
+      <option value="house">House (OBS)</option>
+    </select>
     <label for="lang">Language:</label>
     <select id="lang">
       <option value="en">English</option>
@@ -172,12 +177,13 @@
     <p>Hear helps our church family and visitors follow the service in their own language.<br>
     We use it so more people in our community can hear the gospel clearly — whether they are deaf, speak another language, or simply want to follow along.</p>
     <p class="verse">“So then faith cometh by hearing, and hearing by the word of God.” — Romans 10:17</p>
-    <p style="margin-top:1rem; font-size:0.8rem; color:#888;">Hear · Live captions from the YouTube stream</p>
+    <p style="margin-top:1rem; font-size:0.8rem; color:#888;">Hear v1.2 · Live captions · YouTube or House (OBS)</p>
   </footer>
 
 <script>
 const captionsEl = document.getElementById('captions');
 const statusEl = document.getElementById('status');
+const sourceSelect = document.getElementById('source');
 const langSelect = document.getElementById('lang');
 const wsUrlInput = document.getElementById('ws-url');
 const connectBtn = document.getElementById('connect');
@@ -231,6 +237,11 @@ function setStatus(text, isLive = false) {
 function connect() {
   if (socket) {
     socket.close();
+  }
+  const source = sourceSelect.value;
+  if (source === 'house') {
+    setStatus('House (OBS) source coming in a later stage — using YouTube for now');
+    return;
   }
   const url = wsUrlInput.value.trim();
   if (!url) return;
